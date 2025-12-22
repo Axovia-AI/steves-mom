@@ -141,6 +141,22 @@ test.describe
       expect(message).toEqual(getMessageByErrorCode(code));
     });
 
+    test('Ada cannot delete a document that does not exist', async ({
+      adaContext,
+    }) => {
+      const nonExistentDocumentId = generateUUID();
+      const timestamp = new Date().toISOString();
+
+      const response = await adaContext.request.delete(
+        `/api/document?id=${nonExistentDocumentId}&timestamp=${timestamp}`,
+      );
+      expect(response.status()).toBe(404);
+
+      const { code, message } = await response.json();
+      expect(code).toEqual('not_found:document');
+      expect(message).toEqual(getMessageByErrorCode(code));
+    });
+
     test('Ada can delete a document by specifying id and timestamp', async ({
       adaContext,
     }) => {

@@ -111,6 +111,32 @@ test.describe
       expect(deletedChat).toMatchObject({ id: chatId });
     });
 
+    test('Ada cannot delete a chat that does not exist', async ({
+      adaContext,
+    }) => {
+      const nonExistentChatId = generateUUID();
+
+      const response = await adaContext.request.delete(
+        `/api/chat?id=${nonExistentChatId}`,
+      );
+      expect(response.status()).toBe(404);
+
+      const { code, message } = await response.json();
+      expect(code).toEqual('not_found:chat');
+      expect(message).toEqual(getMessageByErrorCode('not_found:chat'));
+    });
+
+    test('Ada cannot delete a chat without specifying an id', async ({
+      adaContext,
+    }) => {
+      const response = await adaContext.request.delete('/api/chat');
+      expect(response.status()).toBe(400);
+
+      const { code, message } = await response.json();
+      expect(code).toEqual('bad_request:api');
+      expect(message).toEqual(getMessageByErrorCode('bad_request:api'));
+    });
+
     test('Ada cannot resume stream of chat that does not exist', async ({
       adaContext,
     }) => {

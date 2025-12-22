@@ -19,8 +19,15 @@ export const fetcher = async (url: string) => {
   const response = await fetch(url);
 
   if (!response.ok) {
-    const { code, cause } = await response.json();
-    throw new ChatSDKError(code as ErrorCode, cause);
+    try {
+      const errorData = await response.json();
+      const code = errorData?.code as ErrorCode | undefined;
+      const cause = errorData?.cause;
+      throw new ChatSDKError(code ?? 'bad_request:api', cause);
+    } catch (parseError) {
+      if (parseError instanceof ChatSDKError) throw parseError;
+      throw new ChatSDKError('bad_request:api', `HTTP ${response.status}`);
+    }
   }
 
   return response.json();
@@ -34,8 +41,15 @@ export async function fetchWithErrorHandlers(
     const response = await fetch(input, init);
 
     if (!response.ok) {
-      const { code, cause } = await response.json();
-      throw new ChatSDKError(code as ErrorCode, cause);
+      try {
+        const errorData = await response.json();
+        const code = errorData?.code as ErrorCode | undefined;
+        const cause = errorData?.cause;
+        throw new ChatSDKError(code ?? 'bad_request:api', cause);
+      } catch (parseError) {
+        if (parseError instanceof ChatSDKError) throw parseError;
+        throw new ChatSDKError('bad_request:api', `HTTP ${response.status}`);
+      }
     }
 
     return response;
@@ -50,7 +64,11 @@ export async function fetchWithErrorHandlers(
 
 export function getLocalStorage(key: string) {
   if (typeof window !== 'undefined') {
-    return JSON.parse(localStorage.getItem(key) || '[]');
+    try {
+      return JSON.parse(localStorage.getItem(key) || '[]');
+    } catch {
+      return [];
+    }
   }
   return [];
 }
